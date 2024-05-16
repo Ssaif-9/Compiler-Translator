@@ -1,0 +1,214 @@
+code without comments
+__________________________________________________________
+
+#include "stdio.h"                           
+
+int main () {
+    int a=1;
+    int b ;                             
+    
+    if(a>0){                                 
+        printf("a is positive");
+        a = 8;
+    }
+
+    for(int i=0;i<5;i++){                    
+        printf("i is %d", i);
+    }
+
+    while (a < b)                            
+    {
+        a = 6;
+        b = 7;
+    }
+  return 0 ;                               
+}
+Translate C code To Python Code
+__________________________________________________________
+
+import "stdio.h"                           
+
+ main   : 
+     a=1
+     b                              
+    
+    if a>0 :                                 
+        prf "a is positive" :
+        a = 8
+    
+
+    for  i=0i<5i++ :                    
+        prf "i is %d"  i :
+    
+
+    while  a < b :                            
+    
+        a = 6
+        b = 7
+    
+  return 0                                
+
+
+
+Output of  Tokenizer
+__________________________________________________________
+
+[('INCLUDE', '#include'), ('STRING_CONSTANT', '"stdio.h"'), ('INT', 'int'), ('KEYWORD', 'main'), ('LEFT_PAREN', '('), ('RIGHT_PAREN', ')'), ('LEFT_BRACE', '{'), ('INT', 'int'), ('IDENTIFIER', 'a'), ('ASSIGNMENT_OP', '='), ('INTEGER_CONSTANT', '1'), ('SEMICOLON', ';'), ('INT', 'int'), ('IDENTIFIER', 'b'), ('SEMICOLON', ';'), ('KEYWORD', 'if'), ('LEFT_PAREN', '('), ('IDENTIFIER', 'a'), ('RELATIONAL_OP', '>'), ('INTEGER_CONSTANT', '0'), ('RIGHT_PAREN', ')'), ('LEFT_BRACE', '{'), ('KEYWORD', 'printf'), ('LEFT_PAREN', '('), ('STRING_CONSTANT', '"a is positive"'), ('RIGHT_PAREN', ')'), ('SEMICOLON', ';'), ('IDENTIFIER', 'a'), ('ASSIGNMENT_OP', '='), ('INTEGER_CONSTANT', '8'), ('SEMICOLON', ';'), ('RIGHT_BRACE', '}'), ('KEYWORD', 'for'), ('LEFT_PAREN', '('), ('INT', 'int'), ('IDENTIFIER', 'i'), ('ASSIGNMENT_OP', '='), ('INTEGER_CONSTANT', '0'), ('SEMICOLON', ';'), ('IDENTIFIER', 'i'), ('RELATIONAL_OP', '<'), ('INTEGER_CONSTANT', '5'), ('SEMICOLON', ';'), ('IDENTIFIER', 'i'), ('INCREMENT_OP', '++'), ('RIGHT_PAREN', ')'), ('LEFT_BRACE', '{'), ('KEYWORD', 'printf'), ('LEFT_PAREN', '('), ('STRING_CONSTANT', '"i is %d"'), ('COMMA', ','), ('IDENTIFIER', 'i'), ('RIGHT_PAREN', ')'), ('SEMICOLON', ';'), ('RIGHT_BRACE', '}'), ('KEYWORD', 'while'), ('LEFT_PAREN', '('), ('IDENTIFIER', 'a'), ('RELATIONAL_OP', '<'), ('IDENTIFIER', 'b'), ('RIGHT_PAREN', ')'), ('LEFT_BRACE', '{'), ('IDENTIFIER', 'a'), ('ASSIGNMENT_OP', '='), ('INTEGER_CONSTANT', '6'), ('SEMICOLON', ';'), ('IDENTIFIER', 'b'), ('ASSIGNMENT_OP', '='), ('INTEGER_CONSTANT', '7'), ('SEMICOLON', ';'), ('RIGHT_BRACE', '}'), ('KEYWORD', 'return'), ('INTEGER_CONSTANT', '0'), ('SEMICOLON', ';'), ('RIGHT_BRACE', '}')]
+
+Parse Tree
+__________________________________________________________
+
+|_Program
+  |_INCLUDES
+    |_#include
+    |_"stdio.h"
+  |_MainFunction
+    |_int
+    |_main
+    |_(
+    |_)
+    |_{
+    |_DeclarationList
+      |_Declaration
+        |_VariableDeclaration
+          |_TypeSpecifier
+            |_int
+          |_IdentifierList
+            |_a
+            |_=
+            |_Expression
+              |_SimpleExpression
+                |_Term
+                  |_Factor
+                    |_1
+        |_;
+      |_Declaration
+        |_VariableDeclaration
+          |_TypeSpecifier
+            |_int
+          |_IdentifierList
+            |_b
+        |_;
+    |_StatementList
+      |_IfStatement
+        |_if
+        |_(
+        |_Expression
+          |_SimpleExpression
+            |_Term
+              |_Factor
+                |_Identifier
+                  |_a
+              |_>
+              |_Factor
+                |_0
+        |_)
+        |_{
+        |_StatementList
+          |_PrintfStatement
+            |_printf
+            |_(
+            |_StringLiteral
+              |_"a is positive"
+            |_)
+            |_;
+          |_AssignmentStatement
+            |_Identifier
+              |_a
+            |_=
+            |_Expression
+              |_SimpleExpression
+                |_Term
+                  |_Factor
+                    |_8
+            |_;
+        |_}
+      |_ForStatement
+        |_for
+        |_(
+        |_TypeSpecifier
+          |_int
+        |_AssignmentStatement
+          |_Identifier
+            |_i
+          |_=
+          |_Expression
+            |_SimpleExpression
+              |_Term
+                |_Factor
+                  |_0
+          |_;
+        |_Expression
+          |_SimpleExpression
+            |_Term
+              |_Factor
+                |_Identifier
+                  |_i
+              |_<
+              |_Factor
+                |_5
+        |_;
+        |_StepStatement
+          |_i
+          |_++
+        |_)
+        |_{
+        |_StatementList
+          |_PrintfStatement
+            |_printf
+            |_(
+            |_StringLiteral
+              |_"i is %d"
+            |_,
+            |_ArgumentList
+              |_Expression
+                |_SimpleExpression
+                  |_Term
+                    |_Factor
+                      |_Identifier
+                        |_i
+            |_)
+            |_;
+        |_}
+      |_WhileStatement
+        |_while
+        |_(
+        |_Expression
+          |_SimpleExpression
+            |_Term
+              |_Factor
+                |_Identifier
+                  |_a
+              |_<
+              |_Factor
+                |_Identifier
+                  |_b
+        |_)
+        |_{
+        |_StatementList
+          |_AssignmentStatement
+            |_Identifier
+              |_a
+            |_=
+            |_Expression
+              |_SimpleExpression
+                |_Term
+                  |_Factor
+                    |_6
+            |_;
+          |_AssignmentStatement
+            |_Identifier
+              |_b
+            |_=
+            |_Expression
+              |_SimpleExpression
+                |_Term
+                  |_Factor
+                    |_7
+            |_;
+        |_}
+      |_ReturnStatement
+        |_return
+        |_0
+        |_;
+    |_}
