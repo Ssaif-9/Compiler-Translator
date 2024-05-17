@@ -4,12 +4,14 @@ int main () {
     int a=1;
     int b ;                             //list of decleration 
     
-    if(a>0){                                 //If Statement
+    if(a > 0)
+    {                                 //If Statement
         printf("a is positive");
         a = 8;
     }
 
-    for(int i=0;i<5;i++){                    //Nested for loops
+    for(int i = 0; i < 5; i++)
+    {                    //Nested for loops
         printf("i is %d", i);
     }
 

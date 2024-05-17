@@ -1,18 +1,21 @@
 code without comments
 __________________________________________________________
 
+
 #include "stdio.h"                           
 
 int main () {
     int a=1;
     int b ;                             
     
-    if(a>0){                                 
+    if(a > 0)
+    {                                 
         printf("a is positive");
         a = 8;
     }
 
-    for(int i=0;i<5;i++){                    
+    for(int i = 0; i < 5; i++)
+    {                    
         printf("i is %d", i);
     }
 
@@ -23,32 +26,23 @@ int main () {
     }
   return 0 ;                               
 }
+
+
 Translate C code To Python Code
 __________________________________________________________
 
-import "stdio.h"                           
-
- main   : 
-     a=1
-     b                              
-    
-    if a>0 :                                 
-        prf "a is positive" :
+def main():
+    a = 1
+    b = None
+    if a > 0:
+        print("a is positive")
         a = 8
-    
-
-    for  i=0i<5i++ :                    
-        prf "i is %d"  i :
-    
-
-    while  a < b :                            
-    
+    for i in range(0, 5):
+        print("i is %d" % i)
+    while a < b:
         a = 6
         b = 7
-    
-  return 0                                
-
-
+    return 0
 
 Output of  Tokenizer
 __________________________________________________________
