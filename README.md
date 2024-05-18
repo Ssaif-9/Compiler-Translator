@@ -18,7 +18,7 @@ This project is a C to Python translator with syntax tree generation, built in P
 
 1. Clone the repository:
     ```
-    git clone https://github.com/yourusername/c-to-python-translator.git
+    git clone https://github.com/Ssaif-9/Compiler-Translator.git
     cd c-to-python-translator
     ```
 
