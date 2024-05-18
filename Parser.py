@@ -3,7 +3,6 @@ import os
 from nltk.tree import Tree
 
 # Token types
-INCLUDE = 'INCLUDE'
 STRING_CONSTANT = 'STRING_CONSTANT'
 INT = 'INT'
 FLOAT = 'FLOAT'
@@ -32,13 +31,12 @@ KEYWORD = 'KEYWORD'
 
 # Token types and their Regular Expression 
 token_types = [
-    (INCLUDE, r'#include'),
     (STRING_CONSTANT, r'"([^"]*)"'),
     (INT, r'int'),
     (FLOAT, r'float'),
     (CHAR, r'char'),
     (DOUBLE, r'double'),
-    (KEYWORD, r"main|printf|if|else|for|while|do|return"),
+    (KEYWORD, r"if|else|for|while"),
     (IDENTIFIER, r'[a-zA-Z_][a-zA-Z0-9_]*'),
     (FLOAT_CONSTANT, r'\d*\.\d+([E][-+]?\d+)?'),
     (INTEGER_CONSTANT, r'\d+'),
@@ -60,15 +58,6 @@ token_types = [
     (NEWLINE, r'\n')
 ]
 
-# Function To remove comments before parsing     
-def remove_comments(code):
-    # Single-line in c //....
-    code = re.sub(r'\/\/.*', '', code)
-
-    # Multi-line comment in c /* ... */
-    code = re.sub(r'\/\*[\s\S]*?\*\/', '', code)
-
-    return code
 
 # Tokenizer     (Error Handling: if the captured token does not match any specified pattern, Code will print invaled token and the token + remaining code)
 def tokenize(code):
@@ -85,138 +74,6 @@ def tokenize(code):
         else:
             raise ValueError('Invalid token: ' + code)
     return tokens
-
-# Function to translate C code to Python code
-def translate(orig):
-    replacements = {
-        '(': ' (',
-        ')': ') ',
-        '&&': ' and ',
-        '||': ' or ',
-        '{': ':',
-        '}': '',
-        ';': '',
-        ',': ', ',
-        '!=': '!=',
-        'string': '',
-        'double': '',
-        'float': '',
-        'bool': '',
-        'wchar_t': '',
-        'short': '',
-        'long': '',
-        'char': '',
-        'else': ' else:',
-        'int': '',
-        '#include': 'import',
-        'printf(': 'print(',
-        '")': '")',
-    }
-
-    for key, value in replacements.items():
-        orig = orig.replace(key, value)
-    return orig
-
-
-def translate_c_to_python(tokens):
-    python_code = []
-    indent_level = 0
-
-    def indent():
-        return '    ' * indent_level
-
-    i = 0
-    while i < len(tokens):
-        if len(tokens[i]) != 2:
-            i += 1
-            continue
-
-        token_type, token_value = tokens[i]
-
-        if token_type == 'INCLUDE':
-            # Skip include statements
-            i += 2  # Skip include and the string constant
-        elif token_type == 'INT' and tokens[i+1][0] == 'KEYWORD' and tokens[i+1][1] == 'main':
-            python_code.append(f"{indent()}def main():")
-            indent_level += 1
-            i += 4  # Skip 'int main() {'
-        elif token_type == 'INT':
-            # Handle variable declarations
-            var_name = tokens[i+1][1]
-            if tokens[i+2][0] == 'ASSIGNMENT_OP':
-                var_value = tokens[i+3][1]
-                python_code.append(f"{indent()}{var_name} = {var_value}")
-                i += 5  # Skip 'int var_name = value;'
-            else:
-                python_code.append(f"{indent()}{var_name} = None")
-                i += 3  # Skip 'int var_name;'
-        elif token_type == 'KEYWORD' and token_value == 'if':
-            condition = []
-            i += 2  # Skip 'if ('
-            while tokens[i][0] != 'RIGHT_PAREN':
-                condition.append(tokens[i][1])
-                i += 1
-            condition_str = ' '.join(condition)
-            python_code.append(f"{indent()}if {condition_str}:")
-            indent_level += 1
-            i += 2  # Skip ') {'
-        elif token_type == 'KEYWORD' and token_value == 'for':
-            # Handle for loop
-            init_var = tokens[i+3][1]
-            init_val = tokens[i+5][1]
-            cond_var = tokens[i+8][1]
-            cond_op = tokens[i+9][1]
-            cond_val = tokens[i+9][1]
-            iter_var = tokens[i+12][1]
-            if cond_op == '<':
-                range_end = cond_val
-            else:
-                # Handle other relational operators if needed
-                range_end = cond_val
-                python_code.append(f"{indent()}for {init_var} in range({init_val}, {range_end}):")
-                indent_level += 1
-                i += 14  # Skip 'for (int var = val; var < val; var++) {'
-        elif token_type == 'KEYWORD' and token_value == 'while':
-            condition = []
-            i += 2  # Skip 'while ('
-            while tokens[i][0] != 'RIGHT_PAREN':
-                condition.append(tokens[i][1])
-                i += 1
-            condition_str = ' '.join(condition)
-            python_code.append(f"{indent()}while {condition_str}:")
-            indent_level += 1
-            i += 2  # Skip ') {'
-        elif token_type == 'KEYWORD' and token_value == 'printf':
-            message = tokens[i+2][1].strip('"')
-            if tokens[i+3][0] == 'COMMA':
-                var_name = tokens[i+4][1]
-                python_code.append(f"{indent()}print(\"{message}\" % {var_name})")
-                i += 7  # Skip 'printf("message", var_name);'
-            else:
-                python_code.append(f"{indent()}print(\"{message}\")")
-                i += 5  # Skip 'printf("message");'
-        elif token_type == 'IDENTIFIER' and tokens[i+1][0] == 'ASSIGNMENT_OP':
-            var_name = token_value
-            var_value = tokens[i+2][1]
-            python_code.append(f"{indent()}{var_name} = {var_value}")
-            i += 4  # Skip 'var_name = value;'
-        elif token_type == 'KEYWORD' and token_value == 'return':
-            return_value = tokens[i+1][1]
-            python_code.append(f"{indent()}return {return_value}")
-            i += 3  # Skip 'return value;'
-        elif token_type == 'LEFT_BRACE':
-            i += 1  # Skip '{'
-        elif token_type == 'RIGHT_BRACE':
-            indent_level -= 1
-            i += 1  # Skip '}'
-        else:
-            i += 1  # Skip other tokens
-
-    return '\n'.join(python_code)
-
-
-
-
 
 
 # Parser Class
@@ -249,47 +106,22 @@ class Parser:
     # Context free Grammar
     def program(self):
         node = TreeNode('Program')
-        while self.current_token and self.current_token[0] == INCLUDE :
-            node.add_child(self.includes())
-        node.add_child(self.main_function())
+        
+        while self.current_token and self.current_token[0] in (INT, FLOAT, CHAR , DOUBLE , KEYWORD , IDENTIFIER):
+            if self.current_token and self.current_token[0] == KEYWORD :
+                if self.current_token[1] == 'if':
+                    node.add_child(self.if_statement())
+                elif self.current_token[1] == 'for':
+                    node.add_child(self.for_statement())
+                elif self.current_token[1] == 'while':
+                    node.add_child(self.while_statement())
+            elif self.current_token and self.current_token[0] in (INT, FLOAT, CHAR , DOUBLE):
+                node.add_child(self.declaration()) 
+            else:
+                node.add_child(self.assignment_statement())
         return node
 
-    def includes(self):
-        node = TreeNode('INCLUDES')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(INCLUDE)
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(STRING_CONSTANT)
-        return node
-
-    def main_function(self):
-        node = TreeNode('MainFunction')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(INT)
-        node.add_child(TreeNode(self.current_token[1])) 
-        self.match(KEYWORD,'main')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(LEFT_PAREN)
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(RIGHT_PAREN)
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(LEFT_BRACE)
-        node.add_child(self.declaration_list())
-        node.add_child(self.statement_list())
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(RIGHT_BRACE)
-        return node
     
-    def return_statement(self):
-        node = TreeNode('ReturnStatement')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(KEYWORD,'return')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(INTEGER_CONSTANT)
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(SEMICOLON)
-        return node
-
     def declaration_list(self):
         node = TreeNode('DeclarationList')
         while self.current_token and self.current_token[0] in (INT, FLOAT, CHAR , DOUBLE):
@@ -317,9 +149,9 @@ class Parser:
         return node
 
     def identifier_list(self):
-        node = TreeNode('IdentifierList')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(IDENTIFIER)
+        node = TreeNode('AssignmentStatement')
+        node.add_child(self.identifier())
+
         if self.current_token and self.current_token[0] == COMMA:
             node.add_child(TreeNode(self.current_token[1]))
             self.match(COMMA)
@@ -338,18 +170,23 @@ class Parser:
                     node.add_child(self.if_statement())
                 elif self.current_token[1] == 'for':
                     node.add_child(self.for_statement())
-                elif self.current_token[1] == 'printf':
-                    node.add_child(self.printf_statement())
                 elif self.current_token[1] == 'while':
                     node.add_child(self.while_statement())
-                elif self.current_token[1] == 'do':
-                    node.add_child(self.do_while_statement())
-                elif self.current_token[1] == 'return':
-                    node.add_child(self.return_statement())
             elif self.current_token[0] in  (INT, FLOAT, CHAR, DOUBLE):
                 node.add_child(self.declaration_list())
             else:
                 node.add_child(self.assignment_statement())
+        return node
+    
+    def condition(self):
+        node = TreeNode('condition')
+        node.add_child(self.identifier())
+        if self.current_token and self.current_token[0] == RELATIONAL_OP:
+            node.add_child(TreeNode(self.current_token[1]))
+            self.match(RELATIONAL_OP)
+            node.add_child(self.expression())
+
+        
         return node
 
     def if_statement(self):
@@ -358,7 +195,7 @@ class Parser:
         self.match(KEYWORD, 'if')
         node.add_child(TreeNode(self.current_token[1]))
         self.match(LEFT_PAREN)
-        node.add_child(self.expression())
+        node.add_child(self.condition())
         node.add_child(TreeNode(self.current_token[1]))
         self.match(RIGHT_PAREN)
         node.add_child(TreeNode(self.current_token[1]))
@@ -385,7 +222,7 @@ class Parser:
         if self.current_token and self.current_token[0] in (INT, FLOAT, CHAR, DOUBLE):
             node.add_child(self.type_specifier())
         node.add_child(self.assignment_statement())
-        node.add_child(self.expression())
+        node.add_child(self.condition())
         node.add_child(TreeNode(self.current_token[1]))
         self.match(SEMICOLON)
         node.add_child(self.step_statement())
@@ -404,7 +241,7 @@ class Parser:
         self.match(KEYWORD, 'while')
         node.add_child(TreeNode(self.current_token[1]))
         self.match(LEFT_PAREN)
-        node.add_child(self.expression())
+        node.add_child(self.condition())
         node.add_child(TreeNode(self.current_token[1]))
         self.match(RIGHT_PAREN)
         node.add_child(TreeNode(self.current_token[1]))
@@ -414,25 +251,6 @@ class Parser:
         self.match(RIGHT_BRACE)
         return node
     
-    def do_while_statement(self):
-        node = TreeNode('DoWhileStatement')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(KEYWORD, 'do')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(LEFT_BRACE)
-        node.add_child(self.statement_list())
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(RIGHT_BRACE)
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(KEYWORD, 'while')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(LEFT_PAREN)
-        node.add_child(self.expression())
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(RIGHT_PAREN)
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(SEMICOLON)
-        return node
     
     def step_statement(self):
         node = TreeNode('StepStatement')
@@ -446,24 +264,6 @@ class Parser:
             self.match(INCREMENT_OP)
         elif self.current_token and self.current_token[0] == DECREMENT_OP:
             self.match(DECREMENT_OP)
-        return node
-
-
-    def printf_statement(self):
-        node = TreeNode('PrintfStatement')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(KEYWORD, 'printf')
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(LEFT_PAREN)
-        node.add_child(self.string_literal())
-        if self.current_token and self.current_token[0] == COMMA:
-            node.add_child(TreeNode(self.current_token[1]))
-            self.match(COMMA)
-            node.add_child(self.argument_list())
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(RIGHT_PAREN)
-        node.add_child(TreeNode(self.current_token[1]))
-        self.match(SEMICOLON)
         return node
 
     def string_literal(self):
@@ -493,29 +293,23 @@ class Parser:
 
     def expression(self):
         node = TreeNode('Expression')
-        node.add_child(self.simple_expression())
-        if self.current_token and self.current_token[0] == RELATIONAL_OP:
+        node.add_child(self.term())
+        if self.current_token and self.current_token[0] == ADDITIVE_OP :
             node.add_child(TreeNode(self.current_token[1]))
-            self.match(self.current_token[0])
-            node.add_child(self.simple_expression())
+            self.match(ADDITIVE_OP)
+            node.add_child(self.expression())
+        
         return node
 
-    def simple_expression(self):
-        node = TreeNode('SimpleExpression')
-        node.add_child(self.term())
-        while self.current_token and self.current_token[0] in (ADDITIVE_OP, RELATIONAL_OP):
-            node.add_child(TreeNode(self.current_token[1]))
-            self.match(self.current_token[0])
-            node.add_child(self.term())
-        return node
 
     def term(self):
         node = TreeNode('Term')
         node.add_child(self.factor())
-        while self.current_token and self.current_token[0] in (MULTIPLICATIVE_OP, RELATIONAL_OP):
+        while self.current_token and self.current_token[0] in (MULTIPLICATIVE_OP):
             node.add_child(TreeNode(self.current_token[1]))
             self.match(self.current_token[0])
-            node.add_child(self.factor())
+            node.add_child(self.term())
+        
         return node
 
     def factor(self):
@@ -546,6 +340,119 @@ class Parser:
 
 
 
+def translate_c_to_python(tokens):
+    python_code = []
+    indent_level = 0
+
+    def indent():
+        return '    ' * indent_level
+
+    i = 0
+    while i < len(tokens):
+        if len(tokens[i]) != 2:
+            i += 1
+            continue
+
+        token_type, token_value = tokens[i]
+
+        if token_type == 'INCLUDE':
+            # Skip include statements
+            i += 2  # Skip include and the string constant
+        elif token_type == 'INT' and tokens[i+1][0] == 'KEYWORD' and tokens[i+1][1] == 'main':
+            python_code.append("def main():")
+            indent_level += 1
+            i += 4  # Skip 'int main() {'
+        elif token_type == 'INT':
+            # Handle variable declarations
+            var_name = tokens[i+1][1]
+            if tokens[i+2][0] == 'ASSIGNMENT_OP':
+                var_value = tokens[i+3][1]
+                python_code.append(f"{indent()}{var_name} = {var_value}")
+                i += 5  # Skip 'int var_name = value;'
+            else:
+                python_code.append(f"{indent()}{var_name} = None")
+                i += 3  # Skip 'int var_name;'
+        elif token_type == 'KEYWORD' and token_value == 'if':
+            condition = []
+            i += 2  # Skip 'if ('
+            while tokens[i][0] != 'RIGHT_PAREN':
+                condition.append(tokens[i][1])
+                i += 1
+            condition_str = ' '.join(condition)
+            python_code.append(f"{indent()}if {condition_str}:")
+            indent_level += 1
+            i += 2  # Skip ') {'
+        elif token_type == 'KEYWORD' and token_value == 'for':
+            # Handle for loop
+            init_var = tokens[i+3][1]
+            init_val = tokens[i+5][1]
+            cond_var = tokens[i+8][1]
+            cond_op = tokens[i+9][1]
+            cond_val = tokens[i+9][1]
+            iter_var = tokens[i+12][1]
+            iter_op = tokens[i+13][1]
+            if cond_op == '<':
+                range_end = cond_val
+            else:
+                # Handle other relational operators if needed
+                range_end = cond_val
+
+            if iter_op == '++':
+                python_code.append(f"{indent()}for {init_var} in range({init_val}, {range_end}):")
+            elif iter_op == '--':
+                python_code.append(f"{indent()}for {init_var} in range({init_val}, {range_end}, -1):")
+
+            indent_level += 1
+            i += 14  # Skip 'for (int var = val; var < val; var++) {'
+        elif token_type == 'KEYWORD' and token_value == 'while':
+            condition = []
+            i += 2  # Skip 'while ('
+            while tokens[i][0] != 'RIGHT_PAREN':
+                condition.append(tokens[i][1])
+                i += 1
+            condition_str = ' '.join(condition)
+            python_code.append(f"{indent()}while {condition_str}:")
+            indent_level += 1
+            i += 2  # Skip ') {'
+        elif token_type == 'KEYWORD' and token_value == 'printf':
+            message = tokens[i+2][1].strip('"')
+            if tokens[i+3][0] == 'COMMA':
+                var_name = tokens[i+4][1]
+                python_code.append(f"{indent()}print(\"{message}\" % {var_name})")
+                i += 7  # Skip 'printf("message", var_name);'
+            else:
+                python_code.append(f"{indent()}print(\"{message}\")")
+                i += 5  # Skip 'printf("message");'
+        elif token_type == 'IDENTIFIER' and tokens[i+1][0] == 'ASSIGNMENT_OP':
+            var_name = token_value
+            expression = []
+            i += 2  # Skip 'var_name ='
+            while tokens[i][0] != 'SEMICOLON':
+                expression.append(tokens[i][1])
+                i += 1
+            expression_str = ' '.join(expression)
+            python_code.append(f"{indent()}{var_name} = {expression_str}")
+            i += 1  # Skip ';'
+        elif token_type == 'IDENTIFIER' and tokens[i+1][0] == 'INCREMENT_OP':
+            var_name = token_value
+            if tokens[i+1][1] == '++':
+                python_code.append(f"{indent()}{var_name} += 1")
+            elif tokens[i+1][1] == '--':
+                python_code.append(f"{indent()}{var_name} -= 1")
+            i += 3  # Skip 'var_name++' or 'var_name--'
+        elif token_type == 'KEYWORD' and token_value == 'return':
+            return_value = tokens[i+1][1]
+            python_code.append(f"{indent()}return {return_value}")
+            i += 3  # Skip 'return value;'
+        elif token_type == 'LEFT_BRACE':
+            i += 1  # Skip '{'
+        elif token_type == 'RIGHT_BRACE':
+            indent_level -= 1
+            i += 1  # Skip '}'
+        else:
+            i += 1  # Skip other tokens
+
+    return '\n'.join(python_code)
     
 # Tree Class                     to Draw tree which save in text file 
 class TreeNode:
@@ -567,6 +474,7 @@ class TreeNode:
             return Tree(self.label, [child.to_nltk_tree() for child in self.children])
         return self.label
     
+    
 #Take Current Directory of python file 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 
@@ -574,14 +482,12 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 input_file =  os.path.join(current_directory, "input.txt")
 
 with open(input_file, 'r') as f:
-    code_with_comments = f.read()
-
-# Remove comments
-c_program = remove_comments(code_with_comments)
-
+    c_program = f.read()
 
 # Tokenize the C code
 tokenizer = tokenize(c_program)
+
+# Translate the C code to Python
 translated_content = translate_c_to_python(tokenizer)
 
 # Create the parser
@@ -597,17 +503,21 @@ print("Done2")  #only for debuging
 
 output_file = os.path.join(current_directory, "output.txt")
 with open(output_file, "w") as f:
-    f.write("code without comments")
-    f.write("\n__________________________________________________________\n\n\n")
+    f.write("\n/********************************************************/\n")
+    f.write("/*\t\t\t\t\t\tInput C code\t\t\t\t\t\t/*")
+    f.write("\n/********************************************************/\n\n")
     f.write(str(c_program))
-    f.write("\n\nTranslate C code To Python Code")
-    f.write("\n__________________________________________________________\n\n")
+    f.write("\n/********************************************************/\n")
+    f.write("/*\t\t\t\t\t\tTranslate C code To Python Code\t\t\t\t\t\t*/")
+    f.write("\n/********************************************************/\n\n")
     f.write(str(translated_content))
-    f.write("\n\nOutput of  Tokenizer")
-    f.write("\n__________________________________________________________\n\n")
+    f.write("\n/********************************************************/\n")
+    f.write("/*\t\t\t\t\t\tOutput of  Tokenizer\t\t\t\t\t\t")
+    f.write("\n/********************************************************/\n\n")
     f.write(str(tokenizer))
-    f.write("\n\nParse Tree")
-    f.write("\n__________________________________________________________\n\n")
+    f.write("\n/********************************************************/\n")
+    f.write("/*\t\t\t\t\t\tParse Tree\t\t\t\t\t\t/*")
+    f.write("\n/********************************************************/\n\n")
     f.write(str(syntax_tree))
 
 print("Tree saved to", output_file)
